@@ -1,0 +1,56 @@
+name: Alerte stock LEGO Astro Bot
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # toutes les 15 min (GitHub peut décaler de quelques minutes)
+  workflow_dispatch:
+    inputs:
+      test_notification:
+        description: "Envoyer une notification de test"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer Playwright + Chromium
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Vérifier le stock
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          TEST_NOTIFICATION: ${{ inputs.test_notification }}
+        run: python check_stock.py
+
+      - name: Capture d'écran de la dernière vérification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capture
+          path: last_check.png
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Mémoriser le statut s'il a changé
+        run: |
+          git config user.name "stock-bot"
+          git config user.email "stock-bot@users.noreply.github.com"
+          git add state.json
+          git diff --cached --quiet || (git commit -m "Statut : $(python -c 'import json;print(json.load(open("state.json"))["status"])')" && git push)
