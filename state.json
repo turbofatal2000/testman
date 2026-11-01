@@ -1,5 +1,5 @@
 {
-  "status": "unknown",
+  "status": "blocked",
   "seen": {
     "add_to_cart": false,
     "login_to_buy": false,
@@ -7,5 +7,5 @@
     "unavailable": false,
     "coming_soon": false
   },
-  "changed_at": "2026-11-01T01:08:56.415606+00:00"
+  "changed_at": "2026-11-01T19:12:45.096558+00:00"
 }
